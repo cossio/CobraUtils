@@ -2,6 +2,8 @@
 General utility functions
 """
 
+import cobra
+
 
 def exchange_reaction(cobra_model, metabolite):
     """
@@ -34,3 +36,25 @@ def flux_constraint(cobra_model, reactions, coefficients_forward, coefficients_b
     cobra_model.problem.Constraint(flux_expression, lb=0, ub=1)
 
 
+def remove_null_reactions(cobra_model):
+    """
+    Remove reactions that have lb == ub == 0.
+    """
+
+    rxns = [rxn for rxn in cobra_model.reactions
+                if rxn.lower_bound == rxn.upper_bound == 0]
+    
+    cobra_model.remove_reactions(rxns, remove_orphans=True)
+
+
+def set_fva_bounds(cobra_model):
+    """
+    Sets reaction bounds using FVA
+    """
+
+    fva = cobra.flux_analysis.flux_variability_analysis(cobra_model)
+    
+    for rxn in cobra_model.reactions:
+        rxn.lower_bound = fva['minimum'][rxn.id]
+        rxn.upper_bound = fva['maximum'][rxn.id]
+        
