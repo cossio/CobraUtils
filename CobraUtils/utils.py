@@ -36,13 +36,15 @@ def flux_constraint(cobra_model, reactions, coefficients_forward, coefficients_b
     cobra_model.problem.Constraint(flux_expression, lb=0, ub=1)
 
 
-def remove_null_reactions(cobra_model):
+def remove_null_reactions(cobra_model, tol=0):
     """
-    Remove reactions that have lb == ub == 0.
+    Remove reactions that have lb == ub == 0, or
+    |ub - lb| <= tol.
     """
+    assert tol >= 0
 
     rxns = [rxn for rxn in cobra_model.reactions
-                if rxn.lower_bound == rxn.upper_bound == 0]
+                if abs(rxn.lower_bound - rxn.upper_bound) <= tol]
     
     cobra_model.remove_reactions(rxns, remove_orphans=True)
 
@@ -57,4 +59,11 @@ def set_fva_bounds(cobra_model):
     for rxn in cobra_model.reactions:
         rxn.lower_bound = fva['minimum'][rxn.id]
         rxn.upper_bound = fva['maximum'][rxn.id]
-        
+
+
+def reduce_model_fva(cobra_model, tol=0):
+    """
+    Sets FVA bounds and removes null reactions
+    """
+    set_fva_bounds(cobra_model)
+    remove_null_reactions(cobra_model, tol)
