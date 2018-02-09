@@ -1,4 +1,5 @@
 from cobra.flux_analysis import flux_variability_analysis
+import optlang
 
 from .utils import remove_null_reactions
 
@@ -46,3 +47,24 @@ def minmax_expression(cobra_model, expr):
     fmax = optimize_expression(cobra_model, expr, sense='max')
     fmin = optimize_expression(cobra_model, expr, sense='min')
     return fmin, fmax
+
+
+def flux_constraint(cobra_model, coefficients_forward, coefficients_reverse):
+    """
+    Adds a linear constrain of the form
+        0 <= cf[1] vf[1] + cb[1] vb[1] + ... <= 1
+    where vf[i], vb[i] are the forward and reverse fluxes of reaction i, and
+    cf = coefficients_forward, cb = coefficients_backward are dictionaries
+    """
+    coefficients = dict()
+    for (bigg_id, cf) in coefficients_forward.items():
+        rxn = cobra_model.reactions.get_by_id(bigg_id)
+        coefficients[rxn.forward_variable] = cf
+    for (bigg_id, cr) in coefficients_reverse.items():
+        rxn = cobra_model.reactions.get_by_id(bigg_id)
+        coefficients[rxn.reverse_variable] = cr
+        
+    constraint = cobra_model.problem.Constraint(optlang.symbolics.Zero, lb=0, ub=1)
+    cobra_model.add_cons_vars(constraint)
+    cobra_model.solver.update()
+    constraint.set_linear_coefficients(coefficients=coefficients)

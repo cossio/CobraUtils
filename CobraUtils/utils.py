@@ -14,34 +14,6 @@ def exchange_reaction(cobra_model, metabolite):
             return rxn
 
 
-def enzymatic_expression(reactions, coefficients_forward, coefficients_reverse):
-    """
-    A linear expression of the form,
-        cf[1] vf[1] + cb[1] vb[1] + ...
-    where vf[i], vb[i] are the forward and reverse fluxes of reaction i, and 
-    cf = coefficients_forward, cb = coefficients_reverse are dictionaries
-    containing the coefficients of each reaction.
-    """
-    expr = 0
-    for rxn in reactions:
-        assert 0 <= coefficients_forward[rxn] < float('inf')
-        assert 0 <= coefficients_reverse[rxn] < float('inf')
-        expr += coefficients_forward[rxn] * rxn.forward_variable
-        expr += coefficients_reverse[rxn] * rxn.reverse_variable
-    return expr
-
-
-def flux_constraint(cobra_model, reactions, coefficients_forward, coefficients_reverse):
-    """
-    Adds a linear constrain of the form
-        0 <= cf[1] vf[1] + cb[1] vb[1] + ... <= 1
-    where vf[i], vb[i] are the forward and reverse fluxes of reaction i, and
-    cf = coefficients_forward, cb = coefficients_backward.
-    """
-    expr = enzymatic_expression(reactions, coefficients_forward, coefficients_reverse)
-    cobra_model.problem.Constraint(expr, lb=0, ub=1)
-
-
 def remove_null_reactions(cobra_model, tol=0):
     """
     Remove reactions that have lb == ub == 0, or
