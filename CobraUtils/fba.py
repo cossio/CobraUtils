@@ -1,5 +1,4 @@
 from cobra.flux_analysis import flux_variability_analysis
-import optlang
 
 from .utils import remove_null_reactions
 
@@ -64,7 +63,7 @@ def flux_constraint(cobra_model, coefficients_forward, coefficients_reverse):
         rxn = cobra_model.reactions.get_by_id(bigg_id)
         coefficients[rxn.reverse_variable] = cr
         
-    constraint = cobra_model.problem.Constraint(optlang.symbolics.Zero, lb=0, ub=1)
+    constraint = cobra_model.problem.Constraint(0, lb=0, ub=1)
     cobra_model.add_cons_vars(constraint)
     cobra_model.solver.update()
     constraint.set_linear_coefficients(coefficients=coefficients)
