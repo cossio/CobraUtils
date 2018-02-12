@@ -1,3 +1,4 @@
+from math import isclose
 from cobra.flux_analysis import flux_variability_analysis
 
 from .utils import remove_null_reactions
@@ -47,23 +48,29 @@ def minmax_expression(cobra_model, expr):
     fmin = optimize_expression(cobra_model, expr, sense='min')
     return fmin, fmax
 
+def limiting_reactions(cobra_model, reactions=None):
+    """
+    Determine limiting reactions
+    """
 
-def flux_constraint(cobra_model, coefficients_forward, coefficients_reverse):
-    """
-    Adds a linear constrain of the form
-        0 <= cf[1] vf[1] + cb[1] vb[1] + ... <= 1
-    where vf[i], vb[i] are the forward and reverse fluxes of reaction i, and
-    cf = coefficients_forward, cb = coefficients_backward are dictionaries
-    """
-    coefficients = dict()
-    for (bigg_id, cf) in coefficients_forward.items():
-        rxn = cobra_model.reactions.get_by_id(bigg_id)
-        coefficients[rxn.forward_variable] = cf
-    for (bigg_id, cr) in coefficients_reverse.items():
-        rxn = cobra_model.reactions.get_by_id(bigg_id)
-        coefficients[rxn.reverse_variable] = cr
-        
-    constraint = cobra_model.problem.Constraint(0, lb=0, ub=1)
-    cobra_model.add_cons_vars(constraint)
-    cobra_model.solver.update()
-    constraint.set_linear_coefficients(coefficients=coefficients)
+    if reactions == None:
+        reactions = cobra_model.reactions
+
+    sol = cobra_model.optimize()
+
+    fva_rxns = []
+
+    for rxn in reactions:
+        limited_below = isclose(sol.fluxes[rxn.id], rxn.lower_bound, rel_tol=1e-2)
+        limited_above = isclose(sol.fluxes[rxn.id], rxn.upper_bound, rel_tol=1e-2)
+        if limited_below or limited_above:
+            if rxn.lower_bound < rxn.upper_bound and not isclose(rxn.lower_bound, rxn.upper_bound, rel_tol=1e-2):
+                fva_rxns.append(rxn)
+    
+    fva = flux_variability_analysis(cobra_model, reaction_list=fva_rxns)
+
+    for rxn, fmin, fmax in zip(fva.index, fva['minimum'].values, fva['maximum'].values):
+        if fmin < sol.fluxes[rxn] and not isclose(sol.fluxes[rxn], fmin, rel_tol=1e-2):
+            yield rxn
+        elif fmax > sol.fluxes[rxn] and not isclose(sol.fluxes[rxn], fmax, rel_tol=1e-2):
+            yield rxn

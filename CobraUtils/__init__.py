@@ -12,8 +12,14 @@ from .utils import (
 
 
 from .fba import (
-    set_fva_bounds, reduce_model_fva, optimize_expression, minmax_expression, flux_constraint
+    set_fva_bounds, reduce_model_fva, optimize_expression, minmax_expression, 
+    limiting_reactions
 )
 
 
-from .print import show_limiting_exchanges
+from .enzymatic import (
+    flux_constraint, set_enzymatic_objective, fba_and_min_enzyme
+)
+
+
+from .print import show_limiting_reactions
