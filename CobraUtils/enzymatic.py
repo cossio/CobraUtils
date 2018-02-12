@@ -35,7 +35,7 @@ def set_enzymatic_objective(cobra_model, coefficients_forward, coefficients_reve
         rxn = cobra_model.reactions.get_by_id(bigg_id)
         coefficients[rxn.reverse_variable] = cr
     
-    cobra_model.objective = cobra_model.problem.Objective(Zero, 
+    cobra_model.objective = cobra_model.problem.Objective(Zero,
                                                           direction='min', sloppy=True, 
                                                           name="min_enzymatic")
 
