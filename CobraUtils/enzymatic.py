@@ -24,6 +24,9 @@ def flux_constraint(cobra_model, coefficients_forward, coefficients_reverse):
 
 
 def set_enzymatic_objective(cobra_model, coefficients_forward, coefficients_reverse):
+    """
+    Sets objective of model to minimization of enzymatic mass.
+    """
     coefficients = dict()
     for (bigg_id, cf) in coefficients_forward.items():
         rxn = cobra_model.reactions.get_by_id(bigg_id)
@@ -41,7 +44,7 @@ def set_enzymatic_objective(cobra_model, coefficients_forward, coefficients_reve
 
 def fba_and_min_enzyme(cobra_model, coefficients_forward, coefficients_reverse):
     """
-    Performs FBA follows by minimization of enzyme content
+    Performs FBA followed by minimization of enzyme content
     """
 
     with cobra_model as model:
